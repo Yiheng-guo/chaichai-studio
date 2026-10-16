@@ -1,0 +1,28 @@
+{
+  "name": "chaichai-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "基于 ChaiChai 的本地中文产品研究与代码分析工作台",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "check": "node scripts/check.mjs",
+    "research": "node src/cli.mjs",
+    "mcp": "node src/mcp.mjs"
+  },
+  "dependencies": {
+    "@babel/parser": "8.0.4",
+    "@modelcontextprotocol/server": "2.3.1",
+    "diff": "9.0.0",
+    "parse5": "8.0.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.3.1"
+  },
+  "engines": {
+    "node": ">=24.15"
+  }
+}

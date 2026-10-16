@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="在本机研究产品、理解技术、评估 AI 接管并追踪代码变化。" />
+    <title>拆拆研究台</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="#"
+        ><span class="brand-icon">拆</span
+        ><span>拆拆研究台<small>证据在手，研究有据</small></span></a
+      >
+      <div class="nav-label">研究任务</div>
+      <nav id="navigation"></nav>
+      <div class="side-section">
+        <div class="section-label">
+          最近研究
+          <button id="history-button" class="icon-button" aria-label="查看全部研究">↗</button>
+        </div>
+        <div id="recent-projects"></div>
+      </div>
+      <div class="sidebar-footer">
+        <button id="engine-button" class="engine-button">
+          <span class="status-dot"></span><span id="engine-status">正在连接拆拆引擎</span
+          ><span>↗</span>
+        </button>
+        <p>本地工作区 <span>v0.1.0</span></p>
+      </div>
+    </aside>
+    <div class="shell">
+      <header class="topbar">
+        <div>
+          <span class="breadcrumb">研究工作区</span><span class="divider">/</span
+          ><span id="page-name">技术说明</span>
+        </div>
+        <div class="top-actions">
+          <span class="local-label"><i></i> 仅本机运行</span
+          ><button class="button small" id="new-button">＋ 新建研究</button>
+        </div>
+      </header>
+      <main id="main"><div class="initial-loading">正在准备研究台…</div></main>
+      <footer>基于开源 ChaiChai 扩展 · 分析不执行目标程序 · 观察、推断与未知分开记录</footer>
+    </div>
+    <dialog id="modal">
+      <div class="modal-top">
+        <h2 id="modal-title"></h2>
+        <button id="modal-close" class="icon-button" aria-label="关闭窗口">×</button>
+      </div>
+      <div id="modal-body"></div>
+    </dialog>
+    <div id="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
