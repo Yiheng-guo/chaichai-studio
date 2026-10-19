@@ -48,6 +48,10 @@ test("真实本地服务完成四种任务、证据导出、访问隔离与重�
   });
   await start();
   let boot = await (await fetch(`${base}/api/bootstrap`)).json();
+  assert.equal(
+    boot.version,
+    JSON.parse(await fs.readFile(path.join(ROOT, "package.json"), "utf8")).version,
+  );
   const request = async (route, data) => {
     const response = await fetch(base + route, {
       method: data ? "POST" : "GET",

@@ -15,6 +15,7 @@ import {
 import { engineHealth } from "./engine.mjs";
 import { MODES, runAnalysis, reportMarkdown } from "./analysis.mjs";
 
+const { version } = JSON.parse(await fs.readFile(path.join(ROOT, "package.json"), "utf8"));
 const port = Number(process.env.PORT || 5197),
   token = randomBytes(32).toString("hex");
 const jobs = new Map(),
@@ -160,7 +161,7 @@ const server = http.createServer(async (req, res) => {
         return send(res, 403, { error: "仅允许从本机工作台获取会话" });
       return send(res, 200, {
         token,
-        version: "0.1.0",
+        version,
         examples: {
           left: path.join(ROOT, "examples/service-v1"),
           right: path.join(ROOT, "examples/service-v2"),
@@ -300,7 +301,7 @@ await fs.mkdir(DATA, { recursive: true, mode: 0o700 });
 await recoverInterrupted();
 server.listen(port, "127.0.0.1", () =>
   console.log(
-    `拆拆研究台 v0.1.0 已启动：http://127.0.0.1:${port}\n研究记录只保存在本机；尚未发布到 GitHub。`,
+    `拆拆研究台 v${version} 已启动：http://127.0.0.1:${port}\n研究记录只保存在本机，不会随代码发布上传。`,
   ),
 );
 server.on("error", (error) => {

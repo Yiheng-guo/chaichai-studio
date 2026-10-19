@@ -2,7 +2,7 @@
 
 基于 [ChaiChai](https://github.com/hubooooooo/chaichai) 的本地中文研究工作台。把技术线索、产品入口、业务分工和代码变化整理为可追溯的研究记录。
 
-个人独立开源项目，面向产品研究与代码理解。当前为 v0.1.2 早期版本。
+个人独立开源项目，面向产品研究与代码理解。当前为 v0.1.3 早期版本。
 
 本项目包含中文工作台，配套的[拆拆引擎维护分支](https://github.com/Yiheng-guo/chaichai)包含原引擎代码修复：[文件变化校验、受限流读取及原生关系图边界](https://github.com/Yiheng-guo/chaichai/blob/codex/core-integrity-fixes/docs/fork-core-fixes.zh-CN.md)。
 

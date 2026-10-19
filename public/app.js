@@ -583,6 +583,9 @@ $("#new-button").onclick = () => {
 $("#history-button").onclick = () => modal("全部研究记录", projectCards(1000));
 async function init() {
   bootstrap = await (await fetch("/api/bootstrap")).json();
+  document.querySelectorAll("[data-version]").forEach((element) => {
+    element.textContent = `v${bootstrap.version}`;
+  });
   await refreshProjects();
   const project = location.hash.match(/^#project\/([0-9a-f-]{36})$/);
   if (project) await openProject(project[1]);
