@@ -14,11 +14,31 @@ test("真实本地服务完成四种任务、证据导出、访问隔离与重�
   const directory = await fs.mkdtemp(path.join(os.tmpdir(), "studio-integration-")),
     port = 22000 + Math.floor(Math.random() * 10000),
     base = `http://127.0.0.1:${port}`;
+  const fakeCodex = path.join(directory, "codex-fixture.mjs");
+  await fs.writeFile(
+    fakeCodex,
+    `#!${process.execPath}
+let input = "";
+process.stdin.on("data", c => input += c);
+process.stdin.on("end", () => {
+  const packet = JSON.parse(input.split("研究数据：\\n")[1]);
+  setTimeout(() => {
+    console.log(JSON.stringify({type:"item.completed",item:{type:"agent_message",text:JSON.stringify({summary:"验收用合成响应",findings:[{claim:"引用输入证据",evidence_ids:packet.evidence.slice(0,1).map(e=>e.id)}],recommendations:[],unknowns:["非真实模型响应"]})}}));
+    console.log(JSON.stringify({type:"turn.completed",usage:{input_tokens:10,output_tokens:5}}));
+  }, 600);
+});`,
+    { mode: 0o700 },
+  );
   let child;
   const start = async () => {
     child = spawn(process.execPath, ["src/server.mjs"], {
       cwd: ROOT,
-      env: { ...process.env, PORT: String(port), STUDIO_DATA_DIR: directory },
+      env: {
+        ...process.env,
+        PORT: String(port),
+        STUDIO_DATA_DIR: directory,
+        STUDIO_CODEX_COMMAND: fakeCodex,
+      },
       stdio: ["ignore", "pipe", "pipe"],
     });
     child.stderr.on("data", () => {});
@@ -118,6 +138,35 @@ test("真实本地服务完成四种任务、证据导出、访问隔离与重�
       assert.ok(job.report.changes.summary.functions >= 4);
       assert.ok(job.report.changes.engineEvidenceId);
       assert.ok(job.report.trace.matches.some((x) => x.name === "calculatePrice"));
+      const route = `/api/projects/${created.id}/interpret`;
+      const preview = await request(route);
+      assert.equal(preview.model, "gpt-6.1-sol");
+      assert.ok(preview.packet.evidence.length);
+      assert.equal(job.report.interpretation, undefined);
+      const refused = await fetch(base + route, {
+        method: "POST",
+        headers: { "X-Studio-Token": boot.token, "Content-Type": "application/json" },
+        body: JSON.stringify({ consent: false }),
+      });
+      assert.equal(refused.status, 400);
+      await request(route, { consent: true });
+      const duplicate = await fetch(base + route, {
+        method: "POST",
+        headers: { "X-Studio-Token": boot.token, "Content-Type": "application/json" },
+        body: JSON.stringify({ consent: true }),
+      });
+      assert.equal(duplicate.status, 429);
+      for (let n = 0; n < 60; n++) {
+        const updated = await request(`/api/projects/${created.id}`);
+        if (updated.report.interpretation?.status === "completed") {
+          job = updated;
+          break;
+        }
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      assert.equal(job.report.interpretation?.status, "completed");
+      assert.equal(job.report.interpretation.answer.summary, "验收用合成响应");
+      assert.ok(job.report.trace.matches.some((x) => x.name === "calculatePrice"));
     }
     const ev = job.report.evidence.find((e) => e.path === "service.js");
     const source = await request(`/api/projects/${created.id}/source?id=${ev.id}`);
@@ -125,7 +174,9 @@ test("真实本地服务完成四种任务、证据导出、访问隔离与重�
     const exported = await fetch(`${base}/api/projects/${created.id}/export?format=md`, {
       headers: { "X-Studio-Token": boot.token },
     });
-    assert.ok((await exported.text()).includes("证据索引"));
+    const markdown = await exported.text();
+    assert.ok(markdown.includes("证据索引"));
+    if (mode === "code") assert.ok(markdown.includes("GPT-6.1 Sol 解读"));
   }
   const failed = await request("/api/projects", {
     mode: "technology",

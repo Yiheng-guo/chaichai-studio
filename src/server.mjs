@@ -14,6 +14,7 @@ import {
 } from "./storage.mjs";
 import { engineHealth } from "./engine.mjs";
 import { MODES, runAnalysis, reportMarkdown } from "./analysis.mjs";
+import { MODEL, modelPacket, interpretReport } from "./model.mjs";
 
 const { version } = JSON.parse(await fs.readFile(path.join(ROOT, "package.json"), "utf8"));
 const port = Number(process.env.PORT || 5197),
@@ -22,6 +23,7 @@ const jobs = new Map(),
   queue = [],
   controllers = new Map(),
   writes = new Map();
+const modelControllers = new Map();
 let active = false,
   closing = false;
 const persist = (job) => {
@@ -132,6 +134,24 @@ async function pump() {
     void pump();
   }
 }
+async function runModel(job, controller) {
+  try {
+    const result = await interpretReport(job.report, { signal: controller.signal });
+    if (controller.signal.aborted) throw new Error("模型解读已取消");
+    job.report.interpretation = { status: "completed", ...result };
+  } catch (error) {
+    job.report.interpretation = {
+      status: controller.signal.aborted ? "cancelled" : "failed",
+      model: MODEL,
+      error: error.message,
+      updatedAt: new Date().toISOString(),
+    };
+  } finally {
+    job.updatedAt = new Date().toISOString();
+    await persist(job).catch(() => {});
+    modelControllers.delete(job.id);
+  }
+}
 function download(res, filename, type, text) {
   res.writeHead(200, {
     "Content-Type": type,
@@ -200,12 +220,50 @@ const server = http.createServer(async (req, res) => {
         return send(res, 202, { id: job.id });
       }
       const match = url.pathname.match(
-        /^\/api\/projects\/([0-9a-f-]{36})(?:\/(cancel|export|source|raw))?$/,
+        /^\/api\/projects\/([0-9a-f-]{36})(?:\/(cancel|export|source|raw|interpret|model-cancel))?$/,
       );
       if (match) {
         const [, jobId, action] = match;
         const job = jobs.get(jobId) || (await loadJob(jobId).catch(() => null));
         if (!job) return send(res, 404, { error: "没有找到这个研究项目" });
+        if (action === "interpret") {
+          if (!job.report || ["queued", "running", "cancelling"].includes(job.status))
+            return send(res, 409, { error: "请先完成基础分析，再选择证据进行模型解读。" });
+          if (req.method === "GET")
+            return send(res, 200, { model: MODEL, packet: modelPacket(job.report) });
+          if (req.method === "POST") {
+            const input = await body(req);
+            if (input.consent !== true)
+              return send(res, 400, { error: "请先确认将预览中的资料发送给 OpenAI。" });
+            if (modelControllers.size)
+              return send(res, 429, { error: "已有模型任务进行中，请完成或取消后再试。" });
+            const controller = new AbortController();
+            job.report.interpretation = {
+              status: "running",
+              model: MODEL,
+              startedAt: new Date().toISOString(),
+            };
+            jobs.set(job.id, job);
+            modelControllers.set(job.id, controller);
+            try {
+              await persist(job);
+            } catch (error) {
+              modelControllers.delete(job.id);
+              job.report.interpretation = {
+                status: "failed",
+                model: MODEL,
+                error: "无法保存任务，模型未调用。",
+              };
+              throw error;
+            }
+            void runModel(job, controller);
+            return send(res, 202, { status: "running", model: MODEL });
+          }
+        }
+        if (action === "model-cancel" && req.method === "POST") {
+          modelControllers.get(job.id)?.abort();
+          return send(res, 200, { status: job.report?.interpretation?.status || "idle" });
+        }
         if (action === "cancel" && req.method === "POST") {
           if (job.status === "queued") {
             const i = queue.findIndex((x) => x.id === jobId);
@@ -316,6 +374,7 @@ async function shutdown() {
   if (closing) return;
   closing = true;
   for (const controller of controllers.values()) controller.abort();
+  for (const controller of modelControllers.values()) controller.abort();
   server.close();
   await Promise.allSettled([...writes.values()]);
   const timer = setTimeout(() => process.exit(0), 4000);

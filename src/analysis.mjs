@@ -721,5 +721,28 @@ export function reportMarkdown(report) {
   );
   for (const e of report.evidence)
     lines.push(`- ${e.id}：${e.origin}:${e.line}；SHA-256 ${e.sha256}`);
+  const interpretation = report.interpretation;
+  if (interpretation?.status === "completed") {
+    const result = interpretation.answer;
+    lines.push(
+      "",
+      "## GPT-6.1 Sol 解读",
+      "",
+      "以下为基于所选资料的模型推断，需结合来源核实。",
+      "",
+      result.summary,
+      ...result.findings.map(
+        (f) => `- ${f.claim}（引用：${f.evidence_ids.join("、") || "未附引用"}）`,
+      ),
+      "",
+      "### 建议",
+      "",
+      ...result.recommendations.map((x) => `- ${x}`),
+      "",
+      "### 仍需确认",
+      "",
+      ...result.unknowns.map((x) => `- ${x}`),
+    );
+  }
   return lines.join("\n");
 }

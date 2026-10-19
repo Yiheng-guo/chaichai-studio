@@ -2,11 +2,11 @@
 
 基于 [ChaiChai](https://github.com/hubooooooo/chaichai) 的本地中文研究工作台。把技术线索、产品入口、业务分工和代码变化整理为可追溯的研究记录。
 
-个人独立开源项目，面向产品研究与代码理解。当前为 v0.1.3 早期版本。
+个人独立开源项目，面向产品研究与代码理解。当前为 v0.2.0 早期版本。
 
 本项目包含中文工作台，配套的[拆拆引擎维护分支](https://github.com/Yiheng-guo/chaichai)包含原引擎代码修复：[文件变化校验、受限流读取及原生关系图边界](https://github.com/Yiheng-guo/chaichai/blob/codex/core-integrity-fixes/docs/fork-core-fixes.zh-CN.md)。
 
-> 当前支持：静态网页研究、JavaScript / TypeScript 代码与版本分析、基于填写条件的 AI 分工评估。需本地安装并构建 ChaiChai；深度反编译另需配置分析器。当前不执行动态网页，不操作真实业务系统，也不调用大模型。
+> 当前支持：静态网页研究、JavaScript / TypeScript 代码与版本分析、基于填写条件的 AI 分工评估，以及可选的 GPT-6.1 Sol 中文解读。需本地安装并构建 ChaiChai；深度反编译另需配置分析器。当前不执行动态网页，不操作真实业务系统。
 
 ![拆拆研究台中文工作区](docs/images/workspace.jpg)
 
@@ -66,7 +66,31 @@ npm start
 CHAICHAI_ROOT=/absolute/path/to/chaichai npm start
 ```
 
-可通过 `PORT` 更换端口，通过 `STUDIO_DATA_DIR` 指定研究数据目录。`.env.example` 为配置说明，本版不会自动加载 `.env`。不需要模型密钥，当前中文解释和评估使用可检查的规则与语法分析，没有外部模型调用。
+可通过 `PORT` 更换端口，通过 `STUDIO_DATA_DIR` 指定研究数据目录。`.env.example` 为配置说明，本版不会自动加载 `.env`。基础分析不需要模型密钥，中文规则解释和语法分析继续在本机完成。
+
+## GPT-6.1 Sol 解读
+
+基础分析完成后，打开报告的“GPT 解读”，点击“预览资料并用 GPT 解读”。确认发送内容后，才通过本机 Codex CLI 调用 `gpt-6.1-sol`。发送的是最多 32 KB 的问题、证据与代码摘录，不是整个目录；未纳入的资料和截断字段会标记在预览数据中。
+
+![GPT-6.1 Sol 代码版本解读](docs/images/gpt-interpretation.jpg)
+
+需要已安装且已登录的 Codex CLI，账号需有该模型的使用权限。先确认：
+
+```bash
+codex --version
+codex login status
+# 尚未登录时，交互运行 codex login
+```
+
+本版在 Codex CLI `0.163.0-alpha.10.2` 上验证，要求支持 `exec`、`--ignore-user-config`、`--ephemeral` 和 `--output-schema`。找不到命令时，可在启动前设置 `STUDIO_CODEX_COMMAND` 为可执行文件的绝对路径。研究台不会复制登录凭据，也不将凭据放进 GitHub 或 CI；其他使用者需自行安装并登录。
+
+模型使用本机 Codex 的认证和配额，与直接调用 OpenAI API 的密钥及账单不同。CLI 本身的系统上下文也会占用 token，32 KB 是研究资料大小上限，不是整次请求的 token 上限或费用上限。每次结果保留 CLI 返回的 token 用量，不提供费用估算。
+
+模型运行在临时空目录，关闭命令执行、浏览器、插件、记忆和多代理等工具，不加载用户项目配置；默认使用无 WebSocket 的 OpenAI 认证提供者配置，避免连接重试。临时参数只作用于本次子进程，不改用户配置文件。若检测到工具调用事件，解读会停止。超时、取消、格式错误或未知证据编号都会明确报错，基础报告保持可用。模型文字始终标为推断，引用编号校验不等同于事实正确性验证；高风险业务的人工确认要求不被模型覆盖。
+
+模型解读成功后可随报告导出 Markdown、JSON，打印时可将模型解读页另存 PDF。自动化测试使用合成 CLI 验证协议和失败路径，不消耗在线模型配额；真实模型连通性需要单独验证。
+
+官方参考：[模型说明](https://developers.openai.com/api/docs/models/gpt-6.1-sol)、[Codex 非交互调用](https://learn.chatgpt.com/docs/non-interactive-mode)。
 
 ## 使用示例
 

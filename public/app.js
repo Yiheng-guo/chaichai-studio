@@ -168,7 +168,8 @@ function evidenceButtons(ids = []) {
   return `<div class="evidence-actions">${ids
     .map((id) => {
       const e = selected?.report?.evidence.find((x) => x.id === id);
-      return `<button class="evidence-button" data-action="evidence" data-id="${esc(id)}">↗ ${esc(e ? `${e.path}:${e.line}` : id.slice(0, 24))}</button>`;
+      const side = e?.side === "left" ? "旧版 · " : e?.side === "right" ? "新版 · " : "";
+      return `<button class="evidence-button" data-action="evidence" data-id="${esc(id)}">↗ ${esc(e ? `${side}${e.path}:${e.line}` : id.slice(0, 24))}</button>`;
     })
     .join("")}</div>`;
 }
@@ -180,6 +181,12 @@ function empty(message) {
 }
 function reportBody() {
   const r = selected.report;
+  if (reportTab === "model") {
+    const m = r.interpretation;
+    const status = m?.status;
+    const result = status === "completed" ? m.answer : null;
+    return `<div class="notice">GPT-6.1 Sol 通过本机已登录的 Codex 调用。点击发送后，所选证据和代码片段会交给 OpenAI 处理，并使用你的 Codex 配额。模型解读属于推断，原始拆解结论和人工确认规则保持可见。</div>${status === "running" ? '<div class="panel section-gap"><h3>GPT 正在解读证据…</h3><p>结果会自动刷新，可离开后回看。</p><button class="button small" data-action="model-cancel">取消模型解读</button></div>' : `<button class="button dark section-gap" data-action="model-preview">${result ? "重新选择资料解读" : "预览资料并用 GPT 解读"} ↗</button>`}${m?.error ? `<div class="notice red section-gap">${esc(m.error)}</div>` : ""}${result ? `<section class="panel section-gap"><div class="eyebrow">GPT-6.1 Sol · 模型解读 / 需核实</div><h3>关键结论</h3><p class="report-text">${esc(result.summary)}</p><p class="muted">${esc(date(m.generatedAt))} · 发送 ${m.inputBytes} 字节研究资料${m.omitted ? ` · ${m.omitted} 项资料未纳入本次输入` : ""}</p></section><div class="report-list section-gap">${result.findings.map((f) => `<article class="finding"><h3>${esc(f.claim)}</h3>${evidenceButtons(f.evidence_ids)}${!f.evidence_ids.length ? '<p class="muted">未附来源引用，需人工核实。</p>' : ""}</article>`).join("")}</div><section class="panel section-gap"><h3>可借鉴点与建议</h3><ul class="checklist">${result.recommendations.map((x) => `<li>${esc(x)}</li>`).join("")}</ul><h3>仍需确认</h3><ul class="checklist">${result.unknowns.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></section>` : ""}`;
+  }
   if (reportTab === "overview")
     return `<div class="report-list">${r.tech.length ? r.tech.map(finding).join("") : empty("当前材料不足以确认具体技术栈。")}${r.recommendations.length ? `<div class="section-title"><h2>可借鉴点与试点建议</h2></div>${r.recommendations.map(finding).join("")}` : ""}</div><div class="section-gap panel"><h3>仍需验证</h3><ul class="checklist">${r.unknowns.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>`;
   if (reportTab === "product")
@@ -248,7 +255,7 @@ function reportBody() {
       )}</tbody></table></div>${list.length > pageLimit ? '<button class="button small section-gap" data-action="more">加载更多证据</button>' : ""}<div class="section-title"><h2>拆拆原始证据</h2><span>完整 JSON 保存在本机</span></div><div class="actions">${r.engine.files.map((file) => `<button class="button small" data-action="download-raw" data-file="${esc(file)}">下载 ${esc(file)}</button>`).join("") || '<p class="muted">本次没有取得拆拆原始分析结果，请查看分析范围中的原因。</p>'}</div>`;
   }
   if (reportTab === "scope")
-    return `<section class="panel"><h3>当前分析范围</h3><p class="muted section-gap">${r.coverage.files} 个文本文件，${(r.coverage.bytes / 1024).toFixed(1)} KB。${r.coverage.status === "partial" ? "存在限制，研究状态为部分完成。" : "分析完成仅指选定输入范围。"}</p><ul class="checklist"><li>单文件最多 512 KB，总文本最多 8 MB，最多 200 个文本文件。</li><li>不跟随符号链接，不采集隐藏目录与 node_modules。</li><li>网页仅初始 HTML 与最多 12 个同源脚本，不执行页面或登录。</li><li>原生应用基础模式仅检查元信息与依赖。</li><li>自由文本研究目标作为背景保存；当前不通过外部模型自动解释问题。</li></ul></section><div class="section-gap panel"><h3>未验证、受限或遗漏事项</h3><ul class="checklist">${[...r.unknowns, ...r.limitations, ...r.coverage.omissions, ...r.coverage.parseErrors.map((e) => `${e.path}：解析不完整（${e.message}）`)].map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div><div class="section-gap panel"><h3>运行记录</h3><ul class="timeline">${selected.timeline.map((e) => `<li>${esc(e.message)}<time>${new Date(e.at).toLocaleTimeString("zh-CN", { hour12: false })}</time></li>`).join("")}</ul></div>`;
+    return `<section class="panel"><h3>当前分析范围</h3><p class="muted section-gap">${r.coverage.files} 个文本文件，${(r.coverage.bytes / 1024).toFixed(1)} KB。${r.coverage.status === "partial" ? "存在限制，研究状态为部分完成。" : "分析完成仅指选定输入范围。"}</p><ul class="checklist"><li>单文件最多 512 KB，总文本最多 8 MB，最多 200 个文本文件。</li><li>不跟随符号链接，不采集隐藏目录与 node_modules。</li><li>网页仅初始 HTML 与最多 12 个同源脚本，不执行页面或登录。</li><li>原生应用基础模式仅检查元信息与依赖。</li><li>基础分析保存研究目标；可在 GPT 解读中预览并发送所选资料。</li></ul></section><div class="section-gap panel"><h3>未验证、受限或遗漏事项</h3><ul class="checklist">${[...r.unknowns, ...r.limitations, ...r.coverage.omissions, ...r.coverage.parseErrors.map((e) => `${e.path}：解析不完整（${e.message}）`)].map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div><div class="section-gap panel"><h3>运行记录</h3><ul class="timeline">${selected.timeline.map((e) => `<li>${esc(e.message)}<time>${new Date(e.at).toLocaleTimeString("zh-CN", { hour12: false })}</time></li>`).join("")}</ul></div>`;
   return "";
 }
 function showReport(job) {
@@ -282,6 +289,7 @@ function showReport(job) {
             )
             .join("")}</div><div class="report-tabs">${[
             ["overview", "关键结论"],
+            ["model", "GPT 解读"],
             ["product", "功能与流程"],
             ["delivery", "AI 接管"],
             ["code", "代码实现"],
@@ -339,7 +347,10 @@ async function openProject(jobId, generation = ++viewGeneration) {
   }
   showReport(job);
   history.replaceState(null, "", `#project/${job.id}`);
-  if (["queued", "running", "cancelling"].includes(job.status))
+  if (
+    ["queued", "running", "cancelling"].includes(job.status) ||
+    job.report?.interpretation?.status === "running"
+  )
     taskPoll = setTimeout(
       () =>
         openProject(jobId, generation)
@@ -412,6 +423,36 @@ document.addEventListener("click", async (event) => {
   if (!el) return;
   try {
     const action = el.dataset.action;
+    if (action === "model-preview") {
+      const jobId = selected.id;
+      const { packet } = await api(`/api/projects/${jobId}/interpret`);
+      if (selected?.id !== jobId) return;
+      modal(
+        "确认本次发送的研究资料",
+        `<p>仅发送下方预览中的问题、证据、函数片段和规则分析结果。不会发送整个目录、原始引擎 JSON 或登录凭据。接收方为 OpenAI，使用本机 Codex 登录与配额。</p><p>本次包含 ${packet.evidence.length} 条证据、${packet.functions.length} 个函数和 ${packet.changes.length} 项函数变化；输入大小 ${new TextEncoder().encode(JSON.stringify(packet)).length} 字节。</p><details><summary>展开完整发送内容</summary><pre class="code-block">${esc(JSON.stringify(packet, null, 2))}</pre></details><button class="button primary section-gap" data-action="model-send" data-id="${jobId}">发送以上资料并开始解读</button>`,
+      );
+    }
+    if (action === "model-send") {
+      if (selected?.id !== el.dataset.id) return;
+      el.disabled = true;
+      try {
+        await api(`/api/projects/${el.dataset.id}/interpret`, {
+          method: "POST",
+          data: { consent: true },
+        });
+        $("#modal").close();
+        reportTab = "model";
+        await openProject(el.dataset.id);
+      } catch (error) {
+        el.disabled = false;
+        throw error;
+      }
+    }
+    if (action === "model-cancel") {
+      const jobId = selected.id;
+      await api(`/api/projects/${jobId}/model-cancel`, { method: "POST", data: {} });
+      if (selected?.id === jobId) await openProject(jobId);
+    }
     if (action === "mode") {
       const draft = getForm();
       if (draft) drafts.set(mode, draft);
@@ -525,6 +566,7 @@ document.addEventListener("click", async (event) => {
         "overview",
         selected.mode === "delivery" ? "delivery" : selected.mode === "code" ? "code" : "product",
         ...(selected.report.changes ? ["versions"] : []),
+        ...(selected.report.interpretation?.status === "completed" ? ["model"] : []),
         "scope",
       ];
       $("#modal").close();

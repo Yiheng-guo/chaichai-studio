@@ -48,14 +48,23 @@ export async function listJobs() {
       error,
       summary: report?.summary,
       counts: report?.counts,
+      modelStatus: report?.interpretation?.status,
     }));
 }
 export async function recoverInterrupted() {
-  for (const summary of await listJobs())
-    if (["queued", "running", "cancelling"].includes(summary.status)) {
+  for (const summary of await listJobs()) {
+    const interrupted = ["queued", "running", "cancelling"].includes(summary.status);
+    if (interrupted || summary.modelStatus === "running") {
       const job = await loadJob(summary.id);
-      job.status = "interrupted";
-      job.error = "上次服务中断。已保留研究记录，可重试或查看已保存的证据。";
+      if (interrupted) {
+        job.status = "interrupted";
+        job.error = "上次服务中断。已保留研究记录，可重试或查看已保存的证据。";
+      }
+      if (job.report?.interpretation?.status === "running") {
+        job.report.interpretation.status = "interrupted";
+        job.report.interpretation.error = "上次模型解读中断，基础分析已保留，可重新发起。";
+      }
       await saveJob(job);
     }
+  }
 }
