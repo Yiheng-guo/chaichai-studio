@@ -2,6 +2,14 @@
 
 基于 [ChaiChai](https://github.com/hubooooooo/chaichai) 的本地中文研究工作台。把技术线索、产品入口、业务分工和代码变化整理为可追溯的研究记录。
 
+个人独立开源项目，面向产品研究与代码理解。当前为 v0.1.1 早期版本。
+
+> 当前支持：静态网页研究、JavaScript / TypeScript 代码与版本分析、基于填写条件的 AI 分工评估。需本地安装并构建 ChaiChai；深度反编译另需配置分析器。当前不执行动态网页，不操作真实业务系统，也不调用大模型。
+
+![拆拆研究台中文工作区](docs/images/workspace.jpg)
+
+完整案例：[服务工作台两个版本改了什么](docs/version-comparison.md)。包含复现步骤、版本变化、源码证据与结论边界。
+
 ## 四类任务
 
 | 任务        | 当前能力                                                                                                    | 结论边界                                                                           |
@@ -19,9 +27,13 @@
 
 需要 Node.js 24.15 或更新版本、已构建的 ChaiChai。浏览器界面和分析进程均运行在本机。
 
-本版基于用户提供的 ChaiChai 归档，归档标记的上游提交为 `74ec6d01074c7df4a0e635bb59b8fe50e5a27607`。建议按相同提交准备引擎，其他版本需验证 CLI 契约兼容。
+本版对接的 ChaiChai 上游提交为 `74ec6d01074c7df4a0e635bb59b8fe50e5a27607`。建议按相同提交准备引擎，其他版本需验证 CLI 契约兼容。
+
+先在同一父目录准备研究台和原引擎（以下命令适用于 macOS / Linux）：
 
 ```bash
+git clone https://github.com/Yiheng-guo/chaichai-studio.git
+cd chaichai-studio
 git clone https://github.com/hubooooooo/chaichai.git ../chaichai-main
 git -C ../chaichai-main checkout 74ec6d01074c7df4a0e635bb59b8fe50e5a27607
 cd ../chaichai-main
@@ -29,8 +41,20 @@ HUSKY=0 npm ci
 npm run build:cached
 cd ../chaichai-studio
 npm ci
+npm run doctor
 npm start
 ```
+
+`npm run doctor` 会检查 Node.js 版本、npm、研究台依赖、引擎入口及引擎能否启动；失败时输出处理步骤，并返回非零退出码。检查本身不会安装依赖或修改系统软件。`npm start` 和 macOS 启动文件也会先做同样的检查。
+
+| 检查提示                      | 处理方法                                              |
+| ----------------------------- | ----------------------------------------------------- |
+| Node.js 版本不足或 npm 不可用 | 安装 Node.js 24.15 或更新版本，重新打开终端           |
+| 缺少研究台依赖                | 在研究台目录执行 `npm ci`                             |
+| 找不到拆拆引擎                | 按上面的步骤准备相邻目录，或设置 `CHAICHAI_ROOT`      |
+| 引擎入口存在，但不能启动      | 在原拆拆目录重新安装依赖并执行 `npm run build:cached` |
+
+环境就绪只表示基础引擎可调用，不保证任意目标都能完整分析，也不代表商业分析器已安装。
 
 浏览器打开 `http://127.0.0.1:5197`。macOS 可双击 `启动研究台.command`。如果已经运行，不必重复启动。
 
@@ -89,4 +113,4 @@ npm test
 
 研究台为独立扩展，不更改 ChaiChai 核心源文件。扩展采用 MIT，原项目及第三方声明见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。仓库只收录扩展代码、许可证和可公开示例，不含公司资料、私人研究记录、第三方软件本体或商业分析器。
 
-GitHub 发布由仓库所有者选择版本后执行；本地版本、运行和提交均不会自动触发发布。
+研究记录保存在本机 `.data/`，不属于公开示例。提交代码前，应单独确认新增文件及导出报告的分享范围。

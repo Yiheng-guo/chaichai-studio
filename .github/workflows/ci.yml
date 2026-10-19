@@ -22,5 +22,5 @@ jobs:
         working-directory: chaichai-main
         env:
           HUSKY: "0"
-      - run: npm ci && npm run check && npm test
+      - run: npm ci && npm run doctor && npm run check && npm test
         working-directory: chaichai-studio

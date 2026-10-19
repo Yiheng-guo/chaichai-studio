@@ -10,5 +10,6 @@ if [[ ! -d node_modules ]]; then
   read -r "?按回车关闭"
   exit 1
 fi
+node scripts/doctor.mjs || { read -r "?按回车关闭"; exit 1; }
 echo "请在浏览器打开 http://127.0.0.1:${PORT:-5197}"
 node src/server.mjs

@@ -1492,3 +1492,34 @@ dialog::backdrop {
     overflow: visible;
   }
 }
+
+.capability-notice {
+  margin: 20px 40px 0;
+  padding: 14px 18px;
+  border: 1px solid #d8e5df;
+  border-radius: 12px;
+  background: #edf5f0;
+  color: #354e45;
+  font-size: 13px;
+  line-height: 1.8;
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+}
+.capability-notice strong {
+  white-space: nowrap;
+}
+@media (max-width: 760px) {
+  .capability-notice {
+    margin: 16px 18px 0;
+    display: block;
+  }
+  .capability-notice strong {
+    display: block;
+  }
+}
+@media print {
+  .capability-notice {
+    margin: 0 0 16px;
+  }
+}
