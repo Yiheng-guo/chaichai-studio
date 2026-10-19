@@ -2,7 +2,9 @@
 
 基于 [ChaiChai](https://github.com/hubooooooo/chaichai) 的本地中文研究工作台。把技术线索、产品入口、业务分工和代码变化整理为可追溯的研究记录。
 
-个人独立开源项目，面向产品研究与代码理解。当前为 v0.1.1 早期版本。
+个人独立开源项目，面向产品研究与代码理解。当前为 v0.1.2 早期版本。
+
+本项目包含中文工作台，配套的[拆拆引擎维护分支](https://github.com/Yiheng-guo/chaichai)包含原引擎代码修复：[文件变化校验、受限流读取及原生关系图边界](https://github.com/Yiheng-guo/chaichai/blob/codex/core-integrity-fixes/docs/fork-core-fixes.zh-CN.md)。
 
 > 当前支持：静态网页研究、JavaScript / TypeScript 代码与版本分析、基于填写条件的 AI 分工评估。需本地安装并构建 ChaiChai；深度反编译另需配置分析器。当前不执行动态网页，不操作真实业务系统，也不调用大模型。
 
@@ -27,16 +29,16 @@
 
 需要 Node.js 24.15 或更新版本、已构建的 ChaiChai。浏览器界面和分析进程均运行在本机。
 
-本版对接的 ChaiChai 上游提交为 `74ec6d01074c7df4a0e635bb59b8fe50e5a27607`。建议按相同提交准备引擎，其他版本需验证 CLI 契约兼容。
+本版推荐引擎为个人维护分支的 `e887f9e` 提交，基于上游 `74ec6d01074c7df4a0e635bb59b8fe50e5a27607` 增加核心修复。其他版本需验证 CLI 契约兼容。
 
 先在同一父目录准备研究台和原引擎（以下命令适用于 macOS / Linux）：
 
 ```bash
 git clone https://github.com/Yiheng-guo/chaichai-studio.git
 cd chaichai-studio
-git clone https://github.com/hubooooooo/chaichai.git ../chaichai-main
-git -C ../chaichai-main checkout 74ec6d01074c7df4a0e635bb59b8fe50e5a27607
-cd ../chaichai-main
+git clone https://github.com/Yiheng-guo/chaichai.git ../chaichai-engine
+git -C ../chaichai-engine checkout e887f9e
+cd ../chaichai-engine
 HUSKY=0 npm ci
 npm run build:cached
 cd ../chaichai-studio
@@ -47,18 +49,18 @@ npm start
 
 `npm run doctor` 会检查 Node.js 版本、npm、研究台依赖、引擎入口及引擎能否启动；失败时输出处理步骤，并返回非零退出码。检查本身不会安装依赖或修改系统软件。`npm start` 和 macOS 启动文件也会先做同样的检查。
 
-| 检查提示                      | 处理方法                                              |
-| ----------------------------- | ----------------------------------------------------- |
-| Node.js 版本不足或 npm 不可用 | 安装 Node.js 24.15 或更新版本，重新打开终端           |
-| 缺少研究台依赖                | 在研究台目录执行 `npm ci`                             |
-| 找不到拆拆引擎                | 按上面的步骤准备相邻目录，或设置 `CHAICHAI_ROOT`      |
-| 引擎入口存在，但不能启动      | 在原拆拆目录重新安装依赖并执行 `npm run build:cached` |
+| 检查提示                      | 处理方法                                                       |
+| ----------------------------- | -------------------------------------------------------------- |
+| Node.js 版本不足或 npm 不可用 | 安装 Node.js 24.15 或更新版本，重新打开终端                    |
+| 缺少研究台依赖                | 在研究台目录执行 `npm ci`                                      |
+| 找不到拆拆引擎                | 按上面的步骤准备相邻的 chaichai-engine，或设置 `CHAICHAI_ROOT` |
+| 引擎入口存在，但不能启动      | 在原拆拆目录重新安装依赖并执行 `npm run build:cached`          |
 
 环境就绪只表示基础引擎可调用，不保证任意目标都能完整分析，也不代表商业分析器已安装。
 
 浏览器打开 `http://127.0.0.1:5197`。macOS 可双击 `启动研究台.command`。如果已经运行，不必重复启动。
 
-引擎不在相邻目录时，在启动前设置绝对路径：
+默认优先使用相邻的 `chaichai-engine`，不存在时兼容原来的 `chaichai-main`。已有的 `CHAICHAI_ROOT` 配置始终优先；如指向旧版引擎，不会自动获得维护分支的修复。引擎不在相邻目录时，在启动前设置绝对路径：
 
 ```bash
 CHAICHAI_ROOT=/absolute/path/to/chaichai npm start

@@ -1,6 +1,6 @@
 {
   "name": "chaichai-studio",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "description": "基于 ChaiChai 的本地中文产品研究与代码分析工作台",
   "license": "MIT",

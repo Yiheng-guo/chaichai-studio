@@ -4,11 +4,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
+import { resolveEngineRoot } from "../src/engine-root.mjs";
 
 const defaultRoot = fileURLToPath(new URL("../", import.meta.url));
 export async function inspectEnvironment({
   root = defaultRoot,
-  engineRoot = process.env.CHAICHAI_ROOT || path.resolve(root, "../chaichai-main"),
+  engineRoot = resolveEngineRoot(root),
 } = {}) {
   const checks = [];
   const add = (name, ok, detail, fix = "") => checks.push({ name, ok, detail, fix });
@@ -70,7 +71,7 @@ export async function inspectEnvironment({
     "拆拆引擎目录",
     exists,
     exists ? engine : `未找到 ${entry}`,
-    "按 README 准备相邻的 chaichai-main，或设置 CHAICHAI_ROOT 为原拆拆项目的绝对路径。",
+    "按 README 准备相邻的 chaichai-engine，或设置 CHAICHAI_ROOT 为已构建拆拆引擎的绝对路径。",
   );
   if (exists) {
     try {

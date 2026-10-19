@@ -12,14 +12,14 @@ jobs:
           path: chaichai-studio
       - uses: actions/checkout@v4
         with:
-          repository: hubooooooo/chaichai
-          ref: 74ec6d01074c7df4a0e635bb59b8fe50e5a27607
-          path: chaichai-main
+          repository: Yiheng-guo/chaichai
+          ref: e887f9e1a1993ba9a9c889aa63bc8e898dff1062
+          path: chaichai-engine
       - uses: actions/setup-node@v4
         with:
           node-version: "24.20.0"
       - run: npm ci && npm run build:cached
-        working-directory: chaichai-main
+        working-directory: chaichai-engine
         env:
           HUSKY: "0"
       - run: npm ci && npm run doctor && npm run check && npm test

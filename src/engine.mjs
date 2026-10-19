@@ -2,10 +2,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { ROOT } from "./storage.mjs";
+import { resolveEngineRoot } from "./engine-root.mjs";
 
-export const engineRoot = path.resolve(
-  process.env.CHAICHAI_ROOT || path.join(ROOT, "../chaichai-main"),
-);
+export const engineRoot = resolveEngineRoot(ROOT);
 const executable = path.join(engineRoot, "scripts/rea.mjs");
 const permitted = new Set([
   "providers",

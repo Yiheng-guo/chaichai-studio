@@ -4,6 +4,21 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { inspectEnvironment } from "../scripts/doctor.mjs";
+import { resolveEngineRoot } from "../src/engine-root.mjs";
+
+test("选择引擎时遵守显式配置，优先维护分支，并兼容旧目录", async () => {
+  const parent = await fs.mkdtemp(path.join(os.tmpdir(), "studio-engine-selection-"));
+  const root = path.join(parent, "studio");
+  try {
+    assert.equal(resolveEngineRoot(root, ""), path.join(parent, "chaichai-main"));
+    await fs.mkdir(path.join(parent, "chaichai-engine"));
+    assert.equal(resolveEngineRoot(root, ""), path.join(parent, "chaichai-engine"));
+    const selected = path.join(parent, "chosen-engine");
+    assert.equal(resolveEngineRoot(root, selected), selected);
+  } finally {
+    await fs.rm(parent, { recursive: true, force: true });
+  }
+});
 
 test("安装检查指出缺失依赖与引擎，并且不创建或安装文件", async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "studio-doctor-"));
